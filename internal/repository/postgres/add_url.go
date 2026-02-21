@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"UrlShortener/internal/repository"
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -17,7 +18,7 @@ func (r *Repository) Add(ctx context.Context, shortCode, url string) error {
 		// check unique value err
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
-			return errors.New("short code already exists")
+			return repository.ErrCodeExists
 		}
 		return err
 	}
