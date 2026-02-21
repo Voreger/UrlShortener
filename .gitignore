@@ -1,0 +1,7 @@
+*.iws
+out/
+.idea_modules/
+build/
+.idea/
+
+.env
