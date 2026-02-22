@@ -11,7 +11,7 @@ import (
 const codeLength = 10
 
 // GenerateShortURL generate special short code with fixed length and only 63 symbols alphabet
-func (service *URLService) GenerateShortURL(originalURL string, additional int) string {
+func GenerateShortURL(originalURL string, additional int) string {
 	// generate string with additional
 	input := fmt.Sprintf("%s%d", originalURL, additional)
 	// use sha224 to get hash

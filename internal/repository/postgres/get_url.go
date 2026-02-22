@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"UrlShortener/internal/repository"
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
@@ -16,7 +17,7 @@ func (r *Repository) Get(ctx context.Context, shortCode string) (string, error) 
 	err := r.pool.QueryRow(ctx, query, shortCode).Scan(&url)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", errors.New("url not found")
+			return "", repository.ErrNotFound
 		}
 		return "", err
 	}

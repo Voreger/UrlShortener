@@ -16,7 +16,7 @@ func NewURLService(repo repository.Repository) *URLService {
 
 // CreateURL creates a short code for given URL. Return short code and error
 func (service *URLService) CreateURL(ctx context.Context, originalURL string) (string, error) {
-	shortCode := service.GenerateShortURL(originalURL, 0)
+	shortCode := GenerateShortURL(originalURL, 0)
 
 	// try to get url if it already exists in storage
 	existingURL, err := service.repo.Get(ctx, shortCode)
@@ -25,11 +25,13 @@ func (service *URLService) CreateURL(ctx context.Context, originalURL string) (s
 		if existingURL == originalURL {
 			return shortCode, nil
 		}
+	} else if !errors.Is(err, repository.ErrNotFound) {
+		return "", err
 	}
 
 	// generate another short code with additional
 	for additional := 1; additional <= 10; additional++ {
-		shortCode = service.GenerateShortURL(originalURL, additional)
+		shortCode = GenerateShortURL(originalURL, additional)
 		err = service.repo.Add(ctx, shortCode, originalURL)
 		if err == nil {
 			return shortCode, nil
