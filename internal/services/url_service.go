@@ -6,6 +6,11 @@ import (
 	"errors"
 )
 
+type URLServiceInterface interface {
+	CreateURL(ctx context.Context, originalURL string) (string, error)
+	GetURL(ctx context.Context, shortCode string) (string, error)
+}
+
 type URLService struct {
 	repo repository.Repository
 }
@@ -19,25 +24,25 @@ func (service *URLService) CreateURL(ctx context.Context, originalURL string) (s
 
 	// generate another short code with additional
 	for additional := 0; additional <= 10; additional++ {
-		shortCode := GenerateShortURL(originalURL, 0)
+		shortCode := GenerateShortURL(originalURL, additional)
 
-		// try to get url if it already exists in storage
-		existingURL, err := service.repo.Get(ctx, shortCode)
-		if err == nil {
-			// return existing url
-			if existingURL == originalURL {
-				return shortCode, nil
-			}
-			continue
-		}
-
-		err = service.repo.Add(ctx, shortCode, originalURL)
+		err := service.repo.Add(ctx, shortCode, originalURL)
 		if err == nil {
 			return shortCode, nil
 		}
-		if !errors.Is(err, repository.ErrCodeExists) {
-			return "", err
+
+		if errors.Is(err, repository.ErrCodeExists) {
+			// try to get url if it already exists in storage
+			existingURL, err := service.repo.Get(ctx, shortCode)
+			if err == nil {
+				// return existing url
+				if existingURL == originalURL {
+					return shortCode, nil
+				}
+				continue
+			}
 		}
+		return "", err
 	}
 
 	return "", errors.New("Generate unique code failed")

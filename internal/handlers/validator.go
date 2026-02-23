@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
-var shortCodeRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{10}$`)
+const shortCodeLength = 10
+
+var shortCodeRegex = regexp.MustCompile(fmt.Sprintf(`^[a-zA-Z0-9_]{%d}$`, shortCodeLength))
 
 // validateURL check if URL is valid
 func validateURL(rawURL string) bool {
@@ -16,7 +20,11 @@ func validateURL(rawURL string) bool {
 	if err != nil {
 		return false
 	}
-	return parsed.Scheme != "" && parsed.Host != ""
+	scheme := strings.ToLower(parsed.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return false
+	}
+	return parsed.Host != ""
 }
 
 // validateShortCode check requirements for short code

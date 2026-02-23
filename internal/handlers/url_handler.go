@@ -4,17 +4,20 @@ import (
 	"UrlShortener/internal/models"
 	"UrlShortener/internal/repository"
 	"UrlShortener/internal/services"
+	"context"
 	"encoding/json"
 	"errors"
+	"github.com/go-chi/chi/v5"
+	"log"
 	"net/http"
-	"strings"
+	"time"
 )
 
 type URLHandler struct {
-	service *services.URLService
+	service services.URLServiceInterface
 }
 
-func NewHandler(service *services.URLService) *URLHandler {
+func NewHandler(service services.URLServiceInterface) *URLHandler {
 	return &URLHandler{
 		service: service,
 	}
@@ -23,11 +26,6 @@ func NewHandler(service *services.URLService) *URLHandler {
 // CreateURL create a short URL by original URL
 // POST /shorten
 func (h *URLHandler) CreateURL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req models.CreateURLRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -39,8 +37,12 @@ func (h *URLHandler) CreateURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortCode, err := h.service.CreateURL(r.Context(), req.URL)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	shortCode, err := h.service.CreateURL(ctx, req.URL)
 	if err != nil {
+		log.Printf("CreateURL error url: %s error: %v", req.URL, err)
 		http.Error(w, "Failed to create short URL", http.StatusInternalServerError)
 		return
 	}
@@ -48,34 +50,40 @@ func (h *URLHandler) CreateURL(w http.ResponseWriter, r *http.Request) {
 	response := models.CreateURLResponse{Short: shortCode}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Printf("Encode error: %v", err)
+	}
 }
 
 // GetURL return original URL by short code
 // GET /{code}
 func (h *URLHandler) GetURL(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	shortCode := strings.TrimPrefix(r.URL.Path, "/")
+	shortCode := chi.URLParam(r, "code")
 	if !validateShortCode(shortCode) {
 		http.Error(w, "Short code is required", http.StatusBadRequest)
 		return
 	}
 
-	originalURL, err := h.service.GetURL(r.Context(), shortCode)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	originalURL, err := h.service.GetURL(ctx, shortCode)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
+			log.Printf("GetURL Not Found: %s", shortCode)
 			http.Error(w, "URL not found", http.StatusNotFound)
 			return
 		}
+		log.Printf("GetURL error code: %s error: %v", shortCode, err)
 		http.Error(w, "Failed to get URL", http.StatusInternalServerError)
 		return
 	}
 
 	response := models.GetURLResponse{URL: originalURL}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		log.Printf("Encode error: %v", err)
+	}
 }
