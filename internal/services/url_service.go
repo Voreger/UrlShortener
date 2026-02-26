@@ -1,6 +1,7 @@
 package services
 
 import (
+	"UrlShortener/internal/common"
 	"UrlShortener/internal/repository"
 	"context"
 	"errors"
@@ -31,7 +32,7 @@ func (service *URLService) CreateURL(ctx context.Context, originalURL string) (s
 			return shortCode, nil
 		}
 
-		if errors.Is(err, repository.ErrCodeExists) {
+		if errors.Is(err, common.ErrCodeExists) {
 			// try to get url if it already exists in storage
 			existingURL, err := service.repo.Get(ctx, shortCode)
 			if err == nil {

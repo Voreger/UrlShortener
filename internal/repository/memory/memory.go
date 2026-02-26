@@ -1,45 +1,49 @@
 package memory
 
 import (
-	"UrlShortener/internal/repository"
+	"UrlShortener/internal/common"
 	"context"
 	"sync"
 )
 
-// MemoryRepository implements interface using in-memory storage
-type MemoryRepository struct {
+// Repository implements interface using in-memory storage
+type Repository struct {
 	data map[string]string
 	mu   sync.RWMutex
 }
 
 // NewMemoryRepository creates in-memory storage
-func NewMemoryRepository() *MemoryRepository {
-	return &MemoryRepository{data: make(map[string]string)}
+func NewMemoryRepository() *Repository {
+	return &Repository{data: make(map[string]string)}
 }
 
 // Get full url from in-memory storage
-func (r *MemoryRepository) Get(ctx context.Context, shortCode string) (string, error) {
+func (r *Repository) Get(ctx context.Context, shortCode string) (string, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+
 	url, ok := r.data[shortCode]
 	if !ok {
-		return url, repository.ErrNotFound
+		return url, common.ErrNotFound
 	}
 	return url, nil
 }
 
 // Add url to in-memory storage
-func (r *MemoryRepository) Add(ctx context.Context, shortCode, url string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+func (r *Repository) Add(ctx context.Context, shortCode, url string) error {
+	r.mu.RLock()
 
 	// check short code already exists with different url
 	existingURL, ok := r.data[shortCode]
+	r.mu.RUnlock()
 	if ok && existingURL != url {
-		return repository.ErrCodeExists
+		return common.ErrCodeExists
 	}
+
+	r.mu.Lock()
 	r.data[shortCode] = url
+	r.mu.Unlock()
 	return nil
 }
 
-func (r *MemoryRepository) Close() {}
+func (r *Repository) Close() {}

@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"UrlShortener/internal/common"
 	"UrlShortener/internal/models"
-	"UrlShortener/internal/repository"
 	"UrlShortener/internal/services"
 	"context"
 	"encoding/json"
@@ -70,7 +70,7 @@ func (h *URLHandler) GetURL(w http.ResponseWriter, r *http.Request) {
 
 	originalURL, err := h.service.GetURL(ctx, shortCode)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
+		if errors.Is(err, common.ErrNotFound) {
 			log.Printf("GetURL Not Found: %s", shortCode)
 			http.Error(w, "URL not found", http.StatusNotFound)
 			return

@@ -29,8 +29,11 @@ func main() {
 	}
 
 	// repository init
-	var repo repository.Repository
-	var err error
+	var (
+		repo repository.Repository
+		err  error
+	)
+
 	switch storageType {
 	case "memory":
 		repo = memory.NewMemoryRepository()

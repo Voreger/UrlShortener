@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"UrlShortener/internal/repository"
+	"UrlShortener/internal/common"
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +11,15 @@ import (
 )
 
 const uniqueViolationCode = "23505" // postgres error code
+
+const getQuery = `
+		SELECT original_url 
+		FROM urls 
+		WHERE short_code = $1`
+
+const addQuery = `
+		INSERT INTO urls (short_code, original_url) 
+		VALUES ($1, $2)`
 
 // Repository implements interface using PostgreSQL
 type Repository struct {
@@ -24,7 +33,7 @@ func NewRepository(dsn string) (*Repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("connect to database: %w", err)
 	}
-	if err := pool.Ping(context.Background()); err != nil {
+	if err = pool.Ping(context.Background()); err != nil {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 	return &Repository{pool: pool}, nil
@@ -33,14 +42,10 @@ func NewRepository(dsn string) (*Repository, error) {
 // Get full url from postgres
 func (r *Repository) Get(ctx context.Context, shortCode string) (string, error) {
 	var url string
-	query := `
-		SELECT original_url 
-		FROM urls 
-		WHERE short_code = $1`
-	err := r.pool.QueryRow(ctx, query, shortCode).Scan(&url)
+	err := r.pool.QueryRow(ctx, getQuery, shortCode).Scan(&url)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", repository.ErrNotFound
+			return "", common.ErrNotFound
 		}
 		return "", err
 	}
@@ -49,16 +54,12 @@ func (r *Repository) Get(ctx context.Context, shortCode string) (string, error) 
 
 // Add url to postgres
 func (r *Repository) Add(ctx context.Context, shortCode, url string) error {
-	query := `
-		INSERT INTO urls (short_code, original_url) 
-		VALUES ($1, $2)
-	`
-	_, err := r.pool.Exec(ctx, query, shortCode, url)
+	_, err := r.pool.Exec(ctx, addQuery, shortCode, url)
 	if err != nil {
 		// check unique value err
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {
-			return repository.ErrCodeExists
+			return common.ErrCodeExists
 		}
 		return err
 	}

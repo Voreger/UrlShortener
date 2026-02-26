@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"UrlShortener/internal/repository"
+	"UrlShortener/internal/common"
 	"context"
 	"errors"
 	"testing"
@@ -29,7 +29,7 @@ func TestMemoryRepository_GetNotFound(t *testing.T) {
 	shortCode := "abc123dsaF"
 
 	url, err := repo.Get(ctx, shortCode)
-	if !errors.Is(err, repository.ErrNotFound) {
+	if !errors.Is(err, common.ErrNotFound) {
 		t.Errorf("Expected ErrNotFound, got %v", err)
 	}
 	if url != "" {
@@ -54,7 +54,7 @@ func TestMemoryRepository_AddDuplicate(t *testing.T) {
 	_ = repo.Add(ctx, "GASDasdFD1", "https://google.com")
 
 	err := repo.Add(ctx, "GASDasdFD1", "https://ya.ru")
-	if !errors.Is(err, repository.ErrCodeExists) {
+	if !errors.Is(err, common.ErrCodeExists) {
 		t.Errorf("Expected ErrCodeExists, got %v", err)
 	}
 }

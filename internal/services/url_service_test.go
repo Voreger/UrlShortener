@@ -1,7 +1,7 @@
 package services
 
 import (
-	repository "UrlShortener/internal/repository"
+	repository "UrlShortener/internal/common"
 	"context"
 	"errors"
 	"testing"
