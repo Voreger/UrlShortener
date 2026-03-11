@@ -54,6 +54,7 @@ func (r *Repository) Get(ctx context.Context, shortCode string) (string, error) 
 
 // Add url to postgres
 func (r *Repository) Add(ctx context.Context, shortCode, url string) error {
+	// didn't use transaction because we have UNIQUE-constraint on shortcode. On collisions, returned ErrCodeExists
 	_, err := r.pool.Exec(ctx, addQuery, shortCode, url)
 	if err != nil {
 		// check unique value err

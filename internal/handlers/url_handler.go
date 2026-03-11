@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"UrlShortener/internal/common"
-	"UrlShortener/internal/models"
 	"UrlShortener/internal/services"
 	"context"
 	"encoding/json"
@@ -26,7 +25,7 @@ func NewHandler(service services.URLServiceInterface) *URLHandler {
 // CreateURL create a short URL by original URL
 // POST /shorten
 func (h *URLHandler) CreateURL(w http.ResponseWriter, r *http.Request) {
-	var req models.CreateURLRequest
+	var req CreateURLRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -47,7 +46,7 @@ func (h *URLHandler) CreateURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := models.CreateURLResponse{Short: shortCode}
+	response := CreateURLResponse{Short: shortCode}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(response)
@@ -80,7 +79,7 @@ func (h *URLHandler) GetURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := models.GetURLResponse{URL: originalURL}
+	response := GetURLResponse{URL: originalURL}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {

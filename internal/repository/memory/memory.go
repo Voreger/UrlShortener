@@ -24,25 +24,23 @@ func (r *Repository) Get(ctx context.Context, shortCode string) (string, error) 
 
 	url, ok := r.data[shortCode]
 	if !ok {
-		return url, common.ErrNotFound
+		return "", common.ErrNotFound
 	}
 	return url, nil
 }
 
 // Add url to in-memory storage
 func (r *Repository) Add(ctx context.Context, shortCode, url string) error {
-	r.mu.RLock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	// check short code already exists with different url
 	existingURL, ok := r.data[shortCode]
-	r.mu.RUnlock()
 	if ok && existingURL != url {
 		return common.ErrCodeExists
 	}
 
-	r.mu.Lock()
 	r.data[shortCode] = url
-	r.mu.Unlock()
 	return nil
 }
 
